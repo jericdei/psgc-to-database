@@ -1,0 +1,23 @@
+name: psgc_update
+
+recipe: laravel
+
+config:
+  webroot: ./public
+  php: "8.2"
+
+services:
+  appserver:
+    scanner: false
+
+  database:
+    type: mysql:8.0
+    portforward: 33071
+    creds:
+      user: lhoopa
+      password: password
+      database: psgc
+
+proxy:
+  appserver:
+    - psgc.localhost
