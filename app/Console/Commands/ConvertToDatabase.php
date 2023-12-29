@@ -53,9 +53,7 @@ class ConvertToDatabase extends Command
 
         $this->info('Reading latest PSGC Excel file...');
 
-        $now = now()->format('Y-m');
-
-        $file = storage_path("app/public/psgc/$now.xlsx");
+        $file = storage_path("app/public/psgc/latest.xlsx");
 
         if (!File::exists($file) && confirm('PSGC file not found. Do you want to download it now?')) {
             $this->info('Downloading latest PSGC file...');
@@ -73,7 +71,7 @@ class ConvertToDatabase extends Command
         $spreadsheet = $reader->load($file);
 
         $worksheet = Cache::rememberForever(
-            "psgc-$now",
+            "psgc-latest",
             fn () => $spreadsheet->getSheetByName('PSGC')->rangeToArray('A1:E50000')
         );
 

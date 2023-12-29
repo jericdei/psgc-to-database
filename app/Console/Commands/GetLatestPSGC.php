@@ -53,10 +53,9 @@ class GetLatestPSGC extends Command
         $spinner->finish();
         $this->newLine();
 
-        $now = now()->format('Y-m');
         $this->info('Storing the file...');
 
-        Storage::disk('public')->put("psgc/{$now}.xlsx", $excel);
+        Storage::disk('public')->put("psgc/latest.xlsx", $excel);
 
         $this->info('PSGC file has been downloaded successfully!');
     }
