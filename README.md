@@ -16,7 +16,7 @@ The original PSGC file is a Microsoft Excel File and this app will read and writ
 ### Clone this repository
 
 ```bash
-git clone git@github.com:jericdei/psgc-to-database.git
+git clone https://github.com/jericdei/psgc-to-database.git
 ```
 
 ### Setup Laravel
