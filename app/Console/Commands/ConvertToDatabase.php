@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Barangay;
+use App\Models\City;
 use App\Models\Municipality;
 use App\Models\Province;
 use App\Models\Region;
@@ -10,6 +11,7 @@ use App\Models\SubMunicipality;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 use function Laravel\Prompts\confirm;
@@ -41,19 +43,34 @@ class ConvertToDatabase extends Command
             DB::table('municipalities')->truncate();
             DB::table('sub_municipalities')->truncate();
             DB::table('barangays')->truncate();
+
+            $this->info('All data has been removed.');
+        } else {
+            $this->error('Action cancelled.');
+
+            return;
         }
 
-        $this->info('Converting to database...');
+        $this->info('Reading latest PSGC Excel file...');
 
         $now = now()->format('Y-m');
 
         $file = storage_path("app/public/psgc/$now.xlsx");
 
+        if (!File::exists($file) && confirm('PSGC file not found. Do you want to download it now?')) {
+            $this->info('Downloading latest PSGC file...');
+            $this->call('psgc:dl-latest');
+        } else {
+            $this->error('Action cancelled.');
+
+            return;
+        }
+
+        $this->info('Reading PSGC Excel file...');
+
         $reader = IOFactory::createReader('Xlsx')->setReadDataOnly(true)->setLoadSheetsOnly('PSGC');
 
         $spreadsheet = $reader->load($file);
-
-        $this->info('Reading latest PSGC Excel file...');
 
         $worksheet = Cache::rememberForever(
             "psgc-$now",
@@ -61,6 +78,8 @@ class ConvertToDatabase extends Command
         );
 
         array_shift($worksheet);
+
+        $this->info('Writing to database...');
 
         // Guide
         // 0 -> code
@@ -81,6 +100,7 @@ class ConvertToDatabase extends Command
                 'region_code' => mb_substr($row[0], 0, 2),
                 'province_code' => mb_substr($row[0], 2, 3),
                 'municipality_code' => mb_substr($row[0], 2, 5),
+                'city_code' => mb_substr($row[0], 2, 5),
                 'sub_municipality_code' => mb_substr($row[0], 5, 2),
                 'barangay_code' => mb_substr($row[0], 2, 8),
                 'name' => $row[1],
@@ -96,8 +116,10 @@ class ConvertToDatabase extends Command
                         Province::create($data);
                         break;
                     case 'mun':
-                    case 'city':
                         Municipality::create($data);
+                        break;
+                    case 'city':
+                        City::create($data);
                         break;
                     case 'submun':
                         SubMunicipality::create($data);

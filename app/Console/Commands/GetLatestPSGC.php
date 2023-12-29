@@ -48,7 +48,7 @@ class GetLatestPSGC extends Command
         $spinner->setMessage('Downloading latest PSGC file...');
         $spinner->start();
 
-        $excel = Http::connectTimeout(100)
+        $excel = Http::connectTimeout(999999)
             ->withOptions([
                 'progress' => fn () => $spinner->advance()
             ])
@@ -63,6 +63,6 @@ class GetLatestPSGC extends Command
 
         Storage::disk('public')->put("psgc/{$now}.xlsx", $excel);
 
-        $this->info('PSGC file downloaded successfully. Check storage/app/public/psgc');
+        $this->info('PSGC file has been downloaded successfully!');
     }
 }
