@@ -1,30 +1,38 @@
 # PSGC to Database
 
-This is a CLI application using Artisan console that aims to convert the latest Philippine Standard Geographic Code (PSGC) Data to Database (MySQL/PostgreSQL).
+This is a CLI application using Artisan console that aims to convert the latest [Philippine Standard Geographic Code (PSGC)](https://psa.gov.ph/classification/psgc) Data to Database (MySQL/PostgreSQL).
 
 The original PSGC file is a Microsoft Excel File and this app will read and write on separate tables.
 
 ## Requirements
 
 -   PHP 8 and above
--   MySQL or PostgreSQL
+-   Composer
+-   MySQL or PostgreSQL Database
 -   No need for a web server since it's just a CLI application.
 
 ## Usage
 
-### Clone this repository and setup Laravel
+### Clone this repository
 
-```
+```bash
 git clone git@github.com:jericdei/psgc-to-database.git
+```
 
+### Setup Laravel
+
+```bash
 cd psgc-to-database
 
 composer install
+
+# Make sure to provide correct database credentials on your .env file
+php artisan migrate
 ```
 
 ### Download the latest PSGC Excel File
 
-```
+```bash
 php artisan psgc:dl-latest
 ```
 
@@ -34,7 +42,7 @@ The file will be stored at `/storage/app/public/psgc/latest.xlsx`
 
 ### Read the Excel file and convert to Database
 
-```
+```bash
 php artisan psgc:convert
 ```
 
