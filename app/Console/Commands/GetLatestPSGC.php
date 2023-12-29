@@ -2,14 +2,9 @@
 
 namespace App\Console\Commands;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\HandlerStack;
 use Illuminate\Console\Command;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\TransferStats;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Prompts\Spinner;
 use Symfony\Component\DomCrawler\Crawler;
 
 class GetLatestPSGC extends Command
