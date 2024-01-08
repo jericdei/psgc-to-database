@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Spatie\SimpleExcel\SimpleExcelReader;
 
 use function Laravel\Prompts\confirm;
 
@@ -40,6 +41,7 @@ class ConvertToDatabase extends Command
         if (!Region::count() !== 0 and confirm('PSGC database is not empty. Do you want to remove all data?')) {
             DB::table('regions')->truncate();
             DB::table('provinces')->truncate();
+            DB::table('cities')->truncate();
             DB::table('municipalities')->truncate();
             DB::table('sub_municipalities')->truncate();
             DB::table('barangays')->truncate();
@@ -51,28 +53,18 @@ class ConvertToDatabase extends Command
             return;
         }
 
-        $this->info('Reading latest PSGC Excel file...');
-
         $file = storage_path("app/public/psgc/latest.xlsx");
 
-        if (!File::exists($file) && confirm('PSGC file not found. Do you want to download it now?')) {
+        if (!File::exists($file)) {
             $this->info('Downloading latest PSGC file...');
             $this->call('psgc:dl-latest');
-        } else {
-            $this->error('Action cancelled.');
-
-            return;
         }
 
         $this->info('Reading PSGC Excel file...');
 
-        $reader = IOFactory::createReader('Xlsx')->setReadDataOnly(true)->setLoadSheetsOnly('PSGC');
-
-        $spreadsheet = $reader->load($file);
-
         $worksheet = Cache::rememberForever(
             "psgc-latest",
-            fn () => $spreadsheet->getSheetByName('PSGC')->rangeToArray('A1:E50000')
+            fn () => SimpleExcelReader::create($file)->fromSheetName('PSGC')->getRows()->toArray()
         );
 
         array_shift($worksheet);
@@ -86,46 +78,35 @@ class ConvertToDatabase extends Command
         // 3 -> type
         // 4 -> old_name
         foreach ($worksheet as $row) {
-            if ($row[0] === null) {
+            $code = $row['10-digit PSGC'];
+
+            if ($code === null) {
                 continue;
             }
 
-            $type = strtolower($row[3]);
+            $type = strtolower($row['Geographic Level']);
 
             $data = [
-                'code' => $row[0],
-                'old_code' => $row[2],
-                'region_code' => mb_substr($row[0], 0, 2),
-                'province_code' => mb_substr($row[0], 2, 3),
-                'municipality_code' => mb_substr($row[0], 2, 5),
-                'city_code' => mb_substr($row[0], 2, 5),
-                'sub_municipality_code' => mb_substr($row[0], 5, 2),
-                'barangay_code' => mb_substr($row[0], 2, 8),
-                'name' => $row[1],
-                'old_name' => $row[4],
+                'code' => $code,
+                'old_code' => $row['Correspondence Code'],
+                'region_code' => mb_substr($code, 0, 2),
+                'province_code' => mb_substr($code, 2, 3),
+                'municipality_code' => mb_substr($code, 2, 5),
+                'city_code' => mb_substr($code, 2, 5),
+                'sub_municipality_code' => mb_substr($code, 5, 2),
+                'barangay_code' => mb_substr($code, 2, 8),
+                'name' => trim($row['Name']),
+                'old_name' => $row['Old names'] ? trim($row['Old names']) : null,
             ];
 
-            DB::transaction(function () use ($type, $data) {
-                switch ($type) {
-                    case 'reg':
-                        Region::create($data);
-                        break;
-                    case 'prov':
-                        Province::create($data);
-                        break;
-                    case 'mun':
-                        Municipality::create($data);
-                        break;
-                    case 'city':
-                        City::create($data);
-                        break;
-                    case 'submun':
-                        SubMunicipality::create($data);
-                        break;
-                    case 'bgy':
-                        Barangay::create($data);
-                        break;
-                };
+            DB::transaction(fn () => match ($type) {
+                'reg' => Region::create($data),
+                'prov' => Province::create($data),
+                'mun' => Municipality::create($data),
+                'city' => City::create($data),
+                'submun' => SubMunicipality::create($data),
+                'bgy' => Barangay::create($data),
+                default => null,
             });
 
             $this->info("Saved to database: $type - {$data['name']}");

@@ -13,6 +13,7 @@
         "maatwebsite/excel": "^3.1",
         "phpoffice/phpspreadsheet": "^1.29",
         "rahul900day/laravel-console-spinner": "^1.1",
+        "spatie/simple-excel": "^3.3",
         "symfony/dom-crawler": "^7.0"
     },
     "require-dev": {
