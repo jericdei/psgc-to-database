@@ -12,7 +12,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 use function Laravel\Prompts\confirm;
